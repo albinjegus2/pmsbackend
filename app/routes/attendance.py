@@ -93,7 +93,7 @@ def start_break():
     user_id    = int(get_jwt_identity())
     data       = request.json or {}
     break_type = data.get('break_type', 'short')
-    if break_type not in ('lunch', 'short'):
+    if break_type not in ('lunch', 'short', 'meeting'):
         return jsonify({'error': 'Invalid break type'}), 400
     record, error = Break.start(user_id, break_type)
     if error:

@@ -72,7 +72,14 @@ def get_contacts():
         g['unread_count'] = 0 # Group unread logic simplified
 
     cursor.close(); conn.close()
-    return jsonify(contacts + groups), 200
+
+    all_contacts = contacts + groups
+    # Sort by latest message timestamp descending — contacts with no messages go to bottom
+    all_contacts.sort(
+        key=lambda c: c['last_message']['timestamp'].isoformat() if c.get('last_message') and c['last_message'].get('timestamp') else '',
+        reverse=True
+    )
+    return jsonify(all_contacts), 200
 
 @messages_bp.route('/<int:other_user_id>', methods=['GET'])
 @jwt_required()

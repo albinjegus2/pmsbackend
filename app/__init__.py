@@ -126,6 +126,7 @@ from app.routes.proposals import proposals_bp
 from app.routes.messages import messages_bp
 from app.routes.announcements import announcements_bp
 from app.routes.documents import documents_bp
+from app.routes.domain import domain_bp
 
 app.register_blueprint(auth_bp,          url_prefix='/api/auth')
 app.register_blueprint(client_bp,        url_prefix='/api')
@@ -143,6 +144,7 @@ app.register_blueprint(proposals_bp,     url_prefix='/api')
 app.register_blueprint(messages_bp,      url_prefix='/api/messages')
 app.register_blueprint(announcements_bp, url_prefix='/api/announcements')
 app.register_blueprint(documents_bp,     url_prefix='/api/documents')
+app.register_blueprint(domain_bp,        url_prefix='/api')
 
 limiter.limit('10 per minute', methods=['GET','POST','PUT','PATCH','DELETE'])(auth_bp)
 

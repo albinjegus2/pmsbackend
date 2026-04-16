@@ -27,6 +27,7 @@ from app.routes.calendar import calendar_bp
 from app.routes.documents import documents_bp
 from app.routes.finance import finance_bp
 from app.routes.leads import leads_bp
+from app.routes.domain import domain_bp
 
 load_dotenv()
 
@@ -161,6 +162,7 @@ app.register_blueprint(calendar_bp,      url_prefix='/api')
 app.register_blueprint(documents_bp)
 app.register_blueprint(finance_bp,       url_prefix='/api')
 app.register_blueprint(leads_bp,         url_prefix='/api')
+app.register_blueprint(domain_bp,        url_prefix='/api')
 
 # Apply stricter rate limits to auth endpoints
 limiter.limit('10 per minute')(auth_bp)

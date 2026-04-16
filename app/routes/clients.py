@@ -6,7 +6,7 @@ from app.models.other import Notification
 
 client_bp = Blueprint('client', __name__)
 
-ALLOWED_ROLES = ['admin', 'crm', 'crm_head', 'marketing_head', 'team_lead']
+ALLOWED_ROLES = ['admin', 'crm_head', 'marketing_head', 'team_lead']
 
 @client_bp.route('/clients', methods=['POST'])
 @jwt_required()
