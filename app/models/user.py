@@ -38,6 +38,8 @@ class User:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("""
                 SELECT u.id, u.name, u.email, u.role, u.phone, u.team_id, u.department_id, u.manager_id,
+                       u.profile_image, u.bio, u.dob, u.address,
+                       u.emergency_contact_name, u.emergency_contact_phone,
                        t.name as team_name, d.name as department_name,
                        m.name as manager_name, u.created_at
                 FROM users u

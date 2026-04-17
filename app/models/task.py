@@ -92,7 +92,7 @@ class Task:
 
     @staticmethod
     def get_by_user(user_id):
-        """Tasks assigned to user OR where user is a participant."""
+        """Tasks assigned to user OR where user is a participant OR observer."""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
@@ -109,9 +109,10 @@ class Task:
             LEFT JOIN teams tm ON t.team_id = tm.id
             LEFT JOIN departments d ON t.department_id = d.id
             LEFT JOIN task_participants tp ON t.id = tp.task_id
-            WHERE t.assigned_to = %s OR tp.user_id = %s
+            LEFT JOIN task_observers tobs ON t.id = tobs.task_id
+            WHERE t.assigned_to = %s OR tp.user_id = %s OR tobs.user_id = %s
             ORDER BY t.created_at DESC
-        """, (user_id, user_id))
+        """, (user_id, user_id, user_id))
         tasks = cursor.fetchall()
         cursor.close(); conn.close()
         return tasks
@@ -136,11 +137,11 @@ class Task:
 
     @staticmethod
     def get_for_team_lead(lead_id):
-        """Tasks assigned TO this lead + tasks assigned BY this lead"""
+        """Tasks assigned TO this lead + tasks assigned BY this lead + observer tasks"""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT t.*,
+            SELECT DISTINCT t.*,
                    u.name as assigned_name, u.role as assigned_role,
                    ab.name as assigned_by_name,
                    c.company_name, tm.name as team_name, d.name as department_name
@@ -150,9 +151,10 @@ class Task:
             LEFT JOIN clients c ON t.client_id = c.id
             LEFT JOIN teams tm ON t.team_id = tm.id
             LEFT JOIN departments d ON t.department_id = d.id
-            WHERE t.assigned_to = %s OR t.assigned_by = %s
+            LEFT JOIN task_observers tobs ON t.id = tobs.task_id
+            WHERE t.assigned_to = %s OR t.assigned_by = %s OR tobs.user_id = %s
             ORDER BY t.created_at DESC
-        """, (lead_id, lead_id))
+        """, (lead_id, lead_id, lead_id))
         tasks = cursor.fetchall()
         cursor.close(); conn.close()
         return tasks

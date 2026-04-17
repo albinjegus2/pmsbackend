@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity, get_jwt,
     jwt_required as refresh_required,
@@ -8,8 +8,16 @@ from app.utils.auth import verify_password, generate_token, generate_refresh_tok
 from app.utils.validators import (
     is_valid_email, is_strong_password, sanitize_str, require_json
 )
+from werkzeug.utils import secure_filename
+import os
 
 auth_bp = Blueprint('auth', __name__)
+
+PROFILE_UPLOAD_FOLDER = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'profiles')
+)
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+os.makedirs(PROFILE_UPLOAD_FOLDER, exist_ok=True)
 
 VALID_ROLES = {'admin', 'marketing_head', 'developer', 'smm', 'crm_head', 'client', 'team_lead', 'employee'}
 
@@ -187,19 +195,44 @@ def change_password():
 # ── Update Profile (Self) ─────────────────────────────────────
 @auth_bp.route('/profile', methods=['PUT'])
 @jwt_required()
-@require_json
 def update_profile():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
-    
-    allowed = ['name', 'phone']
-    update_data = {k: sanitize_str(v) for k, v in data.items() if k in allowed and v}
-    
+    data = request.get_json() or {}
+
+    allowed = ['name', 'phone', 'bio', 'dob', 'address', 'emergency_contact_name', 'emergency_contact_phone']
+    update_data = {}
+    for k in allowed:
+        if k in data:
+            update_data[k] = sanitize_str(str(data[k])) if data[k] else None
+
     if not update_data:
         return jsonify({'error': 'No valid fields provided'}), 400
-        
+
     User.update(user_id, **update_data)
     return jsonify({'message': 'Profile updated successfully'}), 200
+
+
+# ── Upload Profile Image ───────────────────────────────────────
+@auth_bp.route('/profile/image', methods=['POST'])
+@jwt_required()
+def upload_profile_image():
+    user_id = int(get_jwt_identity())
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+    file = request.files['image']
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({'error': 'Invalid image type'}), 400
+    filename = f"profile_{user_id}.{ext}"
+    file.save(os.path.join(PROFILE_UPLOAD_FOLDER, filename))
+    User.update(user_id, profile_image=filename)
+    return jsonify({'profile_image': filename}), 200
+
+
+# ── Serve Profile Image ────────────────────────────────────────
+@auth_bp.route('/profile/image/<filename>', methods=['GET'])
+def serve_profile_image(filename):
+    return send_from_directory(PROFILE_UPLOAD_FOLDER, filename)
 
 
 # ── Update User (Admin/HR) ───────────────────────────────────

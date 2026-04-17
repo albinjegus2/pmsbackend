@@ -107,7 +107,6 @@ def get_tasks():
         tasks = Task.get_for_team_lead(user_id)
     else:
         tasks = Task.get_by_user(user_id)
-
     return jsonify([serialize(t) for t in tasks]), 200
 
 
@@ -152,9 +151,14 @@ def update_task(task_id):
     # Employees/developers/smm can only update status on assigned or participant tasks
     if claims['role'] not in LEAD_ROLES and claims['role'] != 'admin':
         participants = Task.get_participants(task_id)
+        observers    = Task.get_observers(task_id)
         participant_ids = [p['id'] for p in participants]
-        if task['assigned_to'] != user_id and user_id not in participant_ids:
+        observer_ids    = [o['id'] for o in observers]
+        if task['assigned_to'] != user_id and user_id not in participant_ids and user_id not in observer_ids:
             return jsonify({"error": "Unauthorized"}), 403
+        # Observers can only view — not update
+        if user_id in observer_ids and task['assigned_to'] != user_id and user_id not in participant_ids:
+            return jsonify({"error": "Observers cannot update tasks"}), 403
         allowed = {'status', 'time_spent'}
         data = {k: v for k, v in data.items() if k in allowed}
 
